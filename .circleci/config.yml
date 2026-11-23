@@ -6,7 +6,12 @@ jobs:
       xcode: "26.6" # M1/M2 resource classes were retired in Feb 2026
     resource_class: m4pro.medium # 6 vCPU / 28 GB, Apple M4 Pro
     steps:
-      - checkout
+      - run:
+          # The repo is public; clone over HTTPS because the project's deploy key is not configured.
+          name: Checkout (HTTPS)
+          command: |
+            git clone https://github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git .
+            git checkout "$CIRCLE_SHA1"
       - run:
           name: Environment info
           command: |
