@@ -1,16 +1,27 @@
 version: 2.1
 
 jobs:
-  build: 
+  build:
     macos:
-      xcode: 14.2.0 # indicate our selected version of Xcode
-    resource_class: macos.m1.large.gen1
-    steps: 
+      xcode: "26.6" # M1/M2 resource classes were retired in Feb 2026
+    resource_class: m4pro.medium # 6 vCPU / 28 GB, Apple M4 Pro
+    steps:
       - checkout
+      - run:
+          name: Environment info
+          command: |
+            sw_vers
+            xcodebuild -version
+            sysctl -n machdep.cpu.brand_string
       - run:
           # build our application
           name: Build Application
-          command: xcodebuild
+          command: |
+            start=$(date +%s)
+            xcodebuild -project circleci-demo-macos.xcodeproj \
+              -scheme circleci-demo-macos -configuration Release \
+              SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO
+            echo "BUILD_SECONDS=$(( $(date +%s) - start ))"
       - run:
           # compress Xcode's build output so that it can be stored as an artifact
           name: Compress app for storage
@@ -18,7 +29,7 @@ jobs:
       - store_artifacts: # store this build output. Read more: https://circleci.com/docs/2.0/artifacts/
           path: app.zip
           destination: app
-          
+
 workflows:
   test_build:
     jobs:

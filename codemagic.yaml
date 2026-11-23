@@ -1,13 +1,24 @@
-version: 1.0.0
-
 workflows:
   macos_app:
     name: macOS App Build
+    instance_type: mac_mini_m2 # use mac_mini_m4 if billing is enabled
     max_build_duration: 60
     environment:
-      vars:
-        XCODE_VERSION: latest
+      xcode: "26.6" # keep in sync with .circleci/config.yml
     scripts:
-      - name: Set up macOS build environment
+      - name: Environment info
         script: |
-          npx envinfo
+          sw_vers
+          xcodebuild -version
+          sysctl -n machdep.cpu.brand_string
+      - name: Build Application
+        script: |
+          start=$(date +%s)
+          xcodebuild -project circleci-demo-macos.xcodeproj \
+            -scheme circleci-demo-macos -configuration Release \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO
+          echo "BUILD_SECONDS=$(( $(date +%s) - start ))"
+      - name: Compress app for storage
+        script: zip -r app.zip build/Release/circleci-demo-macos.app
+    artifacts:
+      - app.zip
